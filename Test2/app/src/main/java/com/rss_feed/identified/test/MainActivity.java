@@ -4,36 +4,35 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.github.nkzawa.emitter.Emitter;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    public ListView lv;
     private Socket socket;
 
-    /*private Socket mSocket;
-    {
-        try {
-            mSocket = IO.socket("http://192.168.1.3:3000/");
-        } catch (URISyntaxException e) {}
-    }
-   */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        lv = (ListView) findViewById(R.id.listView);
         try {
-            socket = IO.socket("http://192.168.1.3:3000/");
+            socket = IO.socket("http://192.168.1.6:3000/");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -49,14 +48,38 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void call(Object... args) {
+                final String jsonString = String.valueOf(args[0]);
 
-              final  String message = String.valueOf(args[0]);
-                //Log.d("MainActivity: ", "message back: " + obj.toString());
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+
+                        try {
+
+                            JSONObject jObj = new JSONObject(jsonString);
+                            JSONObject jValue = new JSONObject(jObj.getJSONObject("feeds").toString());
+                            JSONArray item = new JSONArray(jValue.getJSONArray("item").toString());
+                            ArrayList<String> list = new ArrayList<String>();
+                            ArrayAdapter<String> adapter;
+                            for (int i = 0; i < item.length(); i++) {
+                                JSONArray title = item.getJSONObject(i).getJSONArray("title");
+                                JSONArray blurb = item.getJSONObject(i).getJSONArray("blurb");
+                                JSONArray picture = item.getJSONObject(i).getJSONArray("picture");
+                                for (int x = 0; x < title.length(); x++) {
+                                  //  Toast.makeText(getApplicationContext(), title.get(x).toString()+ " " +blurb.get(x).toString() + " " + picture.get(x).toString(),Toast.LENGTH_LONG).show();
+                                   list.add(title.get(x).toString() + " " + blurb.get(x).toString() + " " + picture.get(x).toString());
+                                }
+
+                            }
+
+                            listView(list);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
+                        }
+
 
                     }
+
                 });
             }
 
@@ -67,14 +90,17 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+
         socket.connect();
-
-
-       // mSocket.on("message", onNewMessage);
+        // mSocket.on("message", onNewMessage);
 
     }
 
-
+    public void listView(ArrayList<String> list){
+        CustomList adapters = new CustomList(list, this);
+        //adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_2, arrayList);
+        lv.setAdapter(adapters);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
