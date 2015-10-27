@@ -1,0 +1,57 @@
+ private void socketListener(){
+
+        socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+
+
+            }
+
+        }).on("message", new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+                final String jsonString = String.valueOf(args[0]);
+
+                runOnUiThread(new Runnable() {
+                    public void run() {
+
+                        try {
+                          JSONObject jObj = new JSONObject(jsonString);
+                            JSONObject jValue = new JSONObject(jObj.getJSONObject("feeds").toString());
+                            JSONArray item = new JSONArray(jValue.getJSONArray("item").toString());
+                            ArrayList<String> list = new ArrayList<String>();
+                            ArrayAdapter<String> adapter;
+                            for (int i = 0; i < item.length(); i++) {
+                                JSONArray title = item.getJSONObject(i).getJSONArray("title");
+                                JSONArray blurb = item.getJSONObject(i).getJSONArray("blurb");
+                                JSONArray link = item.getJSONObject(i).getJSONArray("link");
+                                for (int x = 0; x < title.length(); x++) {
+                                    //  Toast.makeText(getApplicationContext(), title.get(x).toString()+ " " +blurb.get(x).toString() + " " + picture.get(x).toString(),Toast.LENGTH_LONG).show();
+                                    list.add(title.get(x).toString() + " " + link.get(x).toString() + " " + blurb.get(x).toString());
+                                }
+
+                            }
+
+                            // listView(list);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
+                        }
+
+
+                    }
+
+                });
+            }
+
+        }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+
+            }
+
+        });
+    }

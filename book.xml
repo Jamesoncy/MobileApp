@@ -1,6 +1,41 @@
 <?xml version="1.0"?>
-<item>
-   <title>XML Developer's Guide</title>
-   <genre>Computer</genre>
-   <price>44.95</price>
+<feeds>
+<item id="1">
+   <title>BITNAME</title>
+   <link>https://bitnami.com/stack/xampp?utm_source=bitnami&utm_medium=installer&utm_campaign=XAMPP%2BInstaller</link>
+   <picture>https://pbs.twimg.com/profile_images/378800000732241585/9e00ada9691f6aab16668cfb9dfa2f1c_400x400.png</picture>
+   <blurb>BITNAME</blurb>
 </item>
+<item id="2">
+   <title>MongoDB</title>
+   <link>https://www.mongodb.org/</link>
+   <picture>http://jstricks.com/wp-content/uploads/2014/10/mongodb-gui-tools.png</picture>
+   <blurb>BITNAME</blurb>
+</item>
+<item id="3">
+   <link>https://www.mysql.com/</link>
+   <title>Mysql</title>
+   <picture>https://upload.wikimedia.org/wikipedia/en/thumb/6/62/MySQL.svg/640px-MySQL.svg.png</picture>
+    <blurb>BITNAME</blurb>
+</item>
+<item id="4">
+   <title>PHP</title>
+   <link>https://secure.php.net/</link>
+   <picture>http://www.endivesoftware.com/wp-content/uploads/2015/08/1-4fac83467069c.png</picture>
+    <blurb>BITNAME</blurb>
+</item>
+<item id="5">
+   <title>Ruby</title>
+   <link>https://www.ruby-lang.org/</link>
+   <picture>http://vignette3.wikia.nocookie.net/p__/images/8/8c/Ruby_Jewel.png/revision/latest?cb=20140603161923&path-prefix=protagonist</picture>
+    <blurb>BITNAME</blurb>
+</item>
+<item id="6">
+   <title>XML Developer's Guide</title>
+   <link>Computer</link>
+   <picture>44.95</picture>
+    <blurb>BITNAME</blurb>
+</item>
+</feeds>
+
+

@@ -1,72 +1,158 @@
 package com.rss_feed.identified.test;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.os.Looper;
+import android.provider.DocumentsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.telephony.TelephonyManager;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.github.nkzawa.emitter.Emitter;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import com.koushikdutta.ion.Ion;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+
 
 public class MainActivity extends AppCompatActivity {
 
     public ListView lv;
     private Socket socket;
-
+    TelephonyManager TM;
+    String insUrl = "http://192.168.1.2:80/test/insert.php";
+    RequestQueue requestQueue;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         lv = (ListView) findViewById(R.id.listView);
+        requestQueue = Volley.newRequestQueue(getApplicationContext());
+      //  View load = (View) findViewById(R.id.loadMore);
         try {
-            socket = IO.socket("http://192.168.1.6:3000/");
+            socket = IO.socket("http://192.168.1.2:3000/");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-        socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
 
+        try {
+            this.listener();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        TM  =  (TelephonyManager) getSystemService(getApplicationContext().TELEPHONY_SERVICE);
+        socket.connect();
+
+        loadMore(null);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void call(Object... args) {
+            public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
+                String title = ((TextView) arg1.findViewById(R.id.list_item_string)).getText().toString();
+                String blurb = ((TextView) arg1.findViewById(R.id.blurb)).getText().toString();
+                String picture = ((TextView) arg1.findViewById(R.id.picture)).getText().toString();
+                String link = ((TextView) arg1.findViewById(R.id.link)).getText().toString();
+                Toast.makeText(getApplicationContext(), title, Toast.LENGTH_SHORT).show();
+                View checkBoxView = View.inflate(MainActivity.this, R.layout.dialogbox, null);
+                ((TextView) checkBoxView.findViewById(R.id.title)).setText(title);
+                ((TextView) checkBoxView.findViewById(R.id.blurb)).setText(blurb);
 
-
+                TextView linkSet = (TextView) checkBoxView.findViewById(R.id.link);
+                linkSet.setClickable(true);
+                linkSet.setMovementMethod(LinkMovementMethod.getInstance());
+                String text = "<a href= '" + link + "'> " + link + " </a>";
+                linkSet.setText(Html.fromHtml(text));
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                Ion.with(getApplicationContext())
+                        .load(picture)
+                        .withBitmap()
+                        .placeholder(R.mipmap.ic_launcher)
+                        .error(R.mipmap.ic_launcher)
+                                // .animateLoad(spinAnimation)
+                                // .animateIn(fadeInAnimation)
+                        .intoImageView((ImageView) checkBoxView.findViewById(R.id.imageView));
+                builder.setTitle("Details");
+                builder.setView(checkBoxView)
+                        .setCancelable(false)
+                        .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
+                        }).show();
             }
+        });
 
-        }).on("message", new Emitter.Listener() {
+
+
+    }
+
+
+
+
+
+    public void loadMore (View v)
+    {
+        socket.emit("request", String.valueOf(lv.getChildCount()));
+    }
+
+
+
+
+
+    public void listener() throws  Exception{
+
+        socket.on("request", new Emitter.Listener() {
 
             @Override
             public void call(Object... args) {
-                final String jsonString = String.valueOf(args[0]);
+
+                final String json = args[0].toString();
 
                 runOnUiThread(new Runnable() {
                     public void run() {
 
                         try {
-
-                            JSONObject jObj = new JSONObject(jsonString);
+                            JSONObject jObj = new JSONObject(json);
                             JSONObject jValue = new JSONObject(jObj.getJSONObject("feeds").toString());
                             JSONArray item = new JSONArray(jValue.getJSONArray("item").toString());
+
                             ArrayList<String> list = new ArrayList<String>();
                             ArrayAdapter<String> adapter;
                             for (int i = 0; i < item.length(); i++) {
                                 JSONArray title = item.getJSONObject(i).getJSONArray("title");
                                 JSONArray blurb = item.getJSONObject(i).getJSONArray("blurb");
+                                JSONArray link = item.getJSONObject(i).getJSONArray("link");
                                 JSONArray picture = item.getJSONObject(i).getJSONArray("picture");
-                                for (int x = 0; x < title.length(); x++) {
-                                  //  Toast.makeText(getApplicationContext(), title.get(x).toString()+ " " +blurb.get(x).toString() + " " + picture.get(x).toString(),Toast.LENGTH_LONG).show();
-                                   list.add(title.get(x).toString() + " " + blurb.get(x).toString() + " " + picture.get(x).toString());
+                                  for (int x = 0; x < title.length(); x++) {
+                                    //   Toast.makeText(getApplicationContext(), title.get(x).toString()+ " " +blurb.get(x).toString(),Toast.LENGTH_LONG).show();
+                                    list.add(title.get(x).toString() + "|" + link.get(x).toString() + "|" + blurb.get(x).toString() + "|" + picture.get(x).toString()+"|"+item.getJSONObject(i).getJSONArray("id").get(0).toString());
                                 }
 
                             }
@@ -77,29 +163,74 @@ public class MainActivity extends AppCompatActivity {
                             Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
                         }
 
-
                     }
 
                 });
             }
 
-        }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
-
-            @Override
-            public void call(Object... args) {
-            }
-
         });
 
-        socket.connect();
-        // mSocket.on("message", onNewMessage);
+    }
+
+    public void likeEvent(View v)
+    {
+        // Toast.makeText(getApplicationContext(),String.valueOf(v.getTag()),Toast.LENGTH_SHORT).show();
+       //  Toast.makeText(getApplicationContext(),String.valueOf(this.TM.getDeviceId())+ "......"+v.getTag().toString(),Toast.LENGTH_SHORT).show();
+        Button btn = (Button)v;
+        final String  action = btn.getText().toString();
+        final String tag = v.getTag().toString();
+
+
+                StringRequest request = new StringRequest(Request.Method.POST, insUrl, new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        System.out.println(response.toString());
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                }) {
+
+                    @Override
+                    protected Map<String, String> getParams() throws AuthFailureError {
+                        Map<String,String> parameters  = new HashMap<String, String>();
+                        parameters.put("userId",TM.getDeviceId().toString());
+                        parameters.put("itemId",tag);
+                        parameters.put("action",action);
+                        return parameters;
+                    }
+                };
+                requestQueue.add(request);
+                if(action == "Like")
+                    btn.setText("Unlike");
+                else
+                    btn.setText("Like");
+
+    }
+
+
+
+    public void listEvent(View v)
+    {
+        // Toast.makeText(getApplicationContext(),String.valueOf(v.getTag()),Toast.LENGTH_SHORT).show();
+//            Toast.makeText(getApplicationContext(),String.valueOf(this.TM.getDeviceId()),Toast.LENGTH_SHORT).show();
+
+        Toast.makeText(getApplicationContext(),String.valueOf(this.TM.getDeviceId()),Toast.LENGTH_SHORT).show();
+
+    }
+
+    public void reOrder(){
 
     }
 
     public void listView(ArrayList<String> list){
-        CustomList adapters = new CustomList(list, this);
-        //adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_2, arrayList);
+       CustomList adapters = new CustomList(list, this);
+
         lv.setAdapter(adapters);
+
     }
 
     @Override
@@ -108,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

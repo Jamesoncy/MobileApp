@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<feeds>
+<item id="1">
+   <id>1</id>
+   <title>BITNAME</title>
+   <link>https://bitnami.com</link>
+   <picture>https://pbs.twimg.com/profile_images/378800000732241585/9e00ada9691f6aab16668cfb9dfa2f1c_400x400.png</picture>
+   <blurb>BITNAME</blurb>
+</item>
+<item id="2">
+   <id>2</id>
+   <title>MongoDB</title>
+   <link>https://www.mongodb.org/</link>
+   <picture>http://jstricks.com/wp-content/uploads/2014/10/mongodb-gui-tools.png</picture>
+   <blurb>BITNAME</blurb>
+</item>
+<item id="3">
+  <id>3</id>
+   <link>https://www.mysql.com/</link>
+   <title>Mysql</title>
+   <picture>https://upload.wikimedia.org/wikipedia/en/thumb/6/62/MySQL.svg/640px-MySQL.svg.png</picture>
+    <blurb>BITNAME</blurb>
+</item>
+<item id="4">
+  <id>4</id>
+   <title>PHP</title>
+   <link>https://secure.php.net/</link>
+   <picture>http://www.endivesoftware.com/wp-content/uploads/2015/08/1-4fac83467069c.png</picture>
+    <blurb>BITNAME</blurb>
+</item>
+<item id="5">
+  <id>5</id>
+   <title>Ruby</title>
+   <link>https://www.ruby-lang.org/</link>
+   <picture>http://jstricks.com/wp-content/uploads/2014/10/mongodb-gui-tools.png</picture>
+    <blurb>BITNAME</blurb>
+</item>
+<item id="6">
+  <id>6</id>
+   <title>XML Developer's Guide</title>
+   <link>Computer</link>
+   <picture>44.95</picture>
+    <blurb>BITNAME</blurb>
+</item>
+</feeds>
+
+

@@ -8,6 +8,9 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 
 import java.util.ArrayList;
 
@@ -16,7 +19,7 @@ import java.util.ArrayList;
  */public class CustomList extends BaseAdapter implements ListAdapter {
     private ArrayList<String> list = new ArrayList<String>();
     private Context context;
-
+    private int i = 0;
 
 
     public CustomList(ArrayList<String> list, Context context) {
@@ -36,12 +39,14 @@ import java.util.ArrayList;
 
     @Override
     public long getItemId(int pos) {
-        return 0;
+        return pos;
         //just return 0 if your list items do not have an Id variable.
     }
 
+
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
+       // this.i++;
         View view = convertView;
         if (view == null) {
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -50,27 +55,17 @@ import java.util.ArrayList;
 
         //Handle TextView and display string from your list
         TextView listItemText = (TextView)view.findViewById(R.id.list_item_string);
-        listItemText.setText(list.get(position));
-
-        //Handle buttons and add onClickListeners
-        Button LikeBtn = (Button)view.findViewById(R.id.like);
-      //  Button addBtn = (Button)view.findViewById(R.id.add_btn);
-
-     /*   deleteBtn.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                //do something
-                list.remove(position); //or some other task
-                notifyDataSetChanged();
-            }
-        });
-        addBtn.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                //do something
-                notifyDataSetChanged();
-            }
-        });*/
+        TextView link = (TextView)view.findViewById(R.id.link);
+        TextView blurb = (TextView)view.findViewById(R.id.blurb);
+        TextView picture = (TextView)view.findViewById(R.id.picture);
+        String str[] = list.get(position).split("\\|");
+        //listItemText.setText(list.get(position));
+        link.setText(str[1]);
+        listItemText.setText(str[0]);
+        blurb.setText(str[2]);
+        picture.setText(str[3]);
+        Button LikeBtn = (Button) view.findViewById(R.id.like);
+        LikeBtn.setTag(str[4]);
 
         return view;
     }
