@@ -4,7 +4,6 @@ var io = require('socket.io')(http);
 var fs = require('fs');
 var sel = [];
 var text2 = "";
-var mysql = require('mysql');
 var json = "";
 
 
@@ -21,56 +20,11 @@ io.on('connection', function(socket){
                       loadXml(value,deviceId,socket);
               });
 
-              socket.on('likeEvent', function(deviceId,tag,action){
-                
-                     likeEvent(deviceId,tag,action,function(err,tag,res){
-                        var result = {
-                        "item_id": tag,
-                        "res": res 
-                        }
-                       io.sockets.emit("likeEvent",JSON.stringify(result));
-
-                     });
-
-              });
-
               
 });
 
 
 
-function likeEvent(deviceId,tag,action,callback){
-
-
-var connection = getConnection();
-var string = '';
-connection.connect();
-var res = 0;
-if(action == 'Like')
-{
-string = 'INSERT INTO rss_feed_user (user_id, item_id) VALUES (?,?)';
-res = 1 ;
-}
-else
-{
-string = 'DELETE FROM rss_feed_user where user_id = ? and item_id = ? limit 1';
-res = -1;
-}
-
-connection.query(string,[deviceId,tag] ,function(err) { 
-
-
-connection.end();
-if(err == null) {
-return callback(null,tag,res);
-}
-return callbak(err);
-
-
-});
-
-
-}
     
 
 
@@ -121,28 +75,18 @@ function loadXml(val,deviceId,socket){
                                                   var index = 0;
                                                   var str = "";
                                                   var action = "";
-                                                /*  for (value =0 ; value < val.length; value ++){
-                                                      selected.push(val[value].item_id);
-                                                  }*/
-                                                   for (value =0 ; value < val.length; value ++){
+                                                  for (value =0 ; value < val.length; value ++){
                                                       selected.push(val[value].item_id);
                                                   }
-                                                 if(data != "undefined"){
                                                    for (value =0 ; value < data.length; value ++){
                                                       linkLike.push(data[value]);
-                                                     }
-                                                   }
-                                                  
+                                                  }
                                                  
                                                for (i=0 ; i < item.length; i++){
                                                      id = item[i].getElementsByTagName('id');
                                                      gId = id[0].childNodes[0].nodeValue;
                                                      index = selected.indexOf(gId);
-                                                      if(index > -1 ){
-                                                          number = val[index].num; 
-                                                            
-                                                      }
-                                                      else number = 0;
+
                                                              link = item[i].getElementsByTagName('link');
                                                              gLink = link[0].childNodes[0].nodeValue;
                                                              title = item[i].getElementsByTagName('title');
@@ -162,7 +106,8 @@ function loadXml(val,deviceId,socket){
                                                        str ="<item id = \""+str+"\">"+br+"<action>"+action+"</action>"+br+"<number>"+number+"</number>"+br+"<id>"+gId+"</id>"+br+"<title>"+gTitle+"</title>"+br+"<link>"+gLink+"</link><picture>"+gPicture+"</picture>"+br+"<blurb>"+gBlurb+"</blurb>"+br+"</item>"+br;
                                                           
                                                      if( index  > -1 ){       
-                                                            top.push(str);
+                                                             number = val[index].num; 
+                                                             top.push(str);
                                                        
                                                       }
                                                       else{
@@ -173,17 +118,17 @@ function loadXml(val,deviceId,socket){
                                                      
                                                   }
 
-                                                  for(counter = 0 ; counter < top.length; counter ++){
+                                                  for(counter = 0 ; counter < top.length; top ++){
 
                                                       newXml += top[counter];
 
                                                   }
 
 
-                                                  if(top.length != send){
+                                                  if(number.length != send){
 
-                                                      for(counter = 0 ; counter < send -  top.length; counter++)
-                                                           newXml += not_selected[counter];
+                                                      for(counter = 0 ; counter < number.length)
+
 
                                                   }
                                                
@@ -220,8 +165,13 @@ function loadXml(val,deviceId,socket){
 
 function selectTop(val, callback){
 
-
-var connection = getConnection();
+var mysql = require('mysql');
+var connection = mysql.createConnection({
+host : 'localhost',
+user : 'root',
+password : '',
+database : 'test'
+});
 
 connection.connect();
 connection.query('SELECT item_id,count(item_id) as num FROM `rss_feed_user` group by item_id order by num desc limit '+val, function(err, rows, fields) { 
@@ -244,8 +194,13 @@ callback(null, sel);
 
 
 function actionButton(deviceId,data, callback){
-
-var connection = getConnection();
+var mysql = require('mysql');
+var connection = mysql.createConnection({
+host : 'localhost',
+user : 'root',
+password : '',
+database : 'test'
+});
 var inCheck = "";
 var like = [];
 for(var i = 0 ; i < data.length; i++){
@@ -264,11 +219,11 @@ connection.connect();
 connection.query('SELECT item_id FROM `rss_feed_user` where user_id = ? and item_id in ('+replaced+') ',[deviceId], function(err, rows, fields) { 
 
 if(err) {
-
 connection.end();
-return callback(err,"undefined");
+return callback(err);
 
 }
+
 
 for (var i = 0; i < rows.length; i++) {
 like.push(rows[i].item_id); 
@@ -283,16 +238,6 @@ callback(null, like);
 }
 
 
-function getConnection(){
-
-var connection = mysql.createConnection({
-host : 'localhost',
-user : 'root',
-password : '',
-database : 'test'
-});
-  return connection;
-}
 
 http.listen(3000, function(){
   console.log('listening on *:3000');

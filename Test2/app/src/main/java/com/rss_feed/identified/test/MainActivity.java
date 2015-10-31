@@ -47,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
 
     public ListView lv;
     private Socket socket;
-    TelephonyManager TM;
-    String insUrl = "http://192.168.1.2:80/test/insert.php";
+    public TelephonyManager TM;
+    String insUrl = "http://192.168.1.7:80/test/insert.php";
     RequestQueue requestQueue;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         requestQueue = Volley.newRequestQueue(getApplicationContext());
       //  View load = (View) findViewById(R.id.loadMore);
         try {
-            socket = IO.socket("http://192.168.1.2:3000/");
+            socket = IO.socket("http://192.168.1.7:3000/");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -72,6 +72,10 @@ public class MainActivity extends AppCompatActivity {
         socket.connect();
 
         loadMore(null);
+
+        likeEventReceiver();
+
+
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
@@ -119,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadMore (View v)
     {
-        socket.emit("request", String.valueOf(lv.getChildCount()));
+        socket.emit("request", String.valueOf(lv.getChildCount()), this.TM.getDeviceId().toString());
     }
 
 
@@ -132,97 +136,177 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void call(Object... args) {
-
                 final String json = args[0].toString();
 
                 runOnUiThread(new Runnable() {
                     public void run() {
-
                         try {
-                            JSONObject jObj = new JSONObject(json);
-                            JSONObject jValue = new JSONObject(jObj.getJSONObject("feeds").toString());
-                            JSONArray item = new JSONArray(jValue.getJSONArray("item").toString());
+                            if (json != "{}") {
+                                JSONObject jObj = new JSONObject(json);
+                                if (jObj.has("feeds")) {
+                                    JSONObject jValue = new JSONObject(jObj.getJSONObject("feeds").toString());
 
-                            ArrayList<String> list = new ArrayList<String>();
-                            ArrayAdapter<String> adapter;
-                            for (int i = 0; i < item.length(); i++) {
-                                JSONArray title = item.getJSONObject(i).getJSONArray("title");
-                                JSONArray blurb = item.getJSONObject(i).getJSONArray("blurb");
-                                JSONArray link = item.getJSONObject(i).getJSONArray("link");
-                                JSONArray picture = item.getJSONObject(i).getJSONArray("picture");
-                                  for (int x = 0; x < title.length(); x++) {
-                                    //   Toast.makeText(getApplicationContext(), title.get(x).toString()+ " " +blurb.get(x).toString(),Toast.LENGTH_LONG).show();
-                                    list.add(title.get(x).toString() + "|" + link.get(x).toString() + "|" + blurb.get(x).toString() + "|" + picture.get(x).toString()+"|"+item.getJSONObject(i).getJSONArray("id").get(0).toString());
+                                    JSONArray item = new JSONArray(jValue.getJSONArray("item").toString());
+
+                                    ArrayList<String> list = new ArrayList<String>();
+                                    ArrayAdapter<String> adapter;
+                                    for (int i = 0; i < item.length(); i++) {
+                                        JSONArray title = item.getJSONObject(i).getJSONArray("title");
+                                        JSONArray blurb = item.getJSONObject(i).getJSONArray("blurb");
+                                        JSONArray link = item.getJSONObject(i).getJSONArray("link");
+                                        JSONArray picture = item.getJSONObject(i).getJSONArray("picture");
+                                        JSONArray number = item.getJSONObject(i).getJSONArray("number");
+                                        JSONArray action = item.getJSONObject(i).getJSONArray("action");
+                                        for (int x = 0; x < title.length(); x++) {
+                                            //   Toast.makeText(getApplicationContext(), title.get(x).toString()+ " " +blurb.get(x).toString(),Toast.LENGTH_LONG).show();
+                                            list.add(title.get(x).toString() + "|" + link.get(x).toString() + "|" + blurb.get(x).toString() + "|" + picture.get(x).toString() + "|" + item.getJSONObject(i).getJSONArray("id").get(0).toString() + "|" + number.get(x).toString() + "|" + action.get(x).toString());
+                                        }
+
+                                    }
+
+                                    listView(list);
+
                                 }
-
                             }
-
-                            listView(list);
                         } catch (Exception e) {
                             e.printStackTrace();
                             Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
                         }
-
                     }
 
-                });
-            }
 
+                });
+
+            }
         });
 
     }
 
     public void likeEvent(View v)
     {
-        // Toast.makeText(getApplicationContext(),String.valueOf(v.getTag()),Toast.LENGTH_SHORT).show();
-       //  Toast.makeText(getApplicationContext(),String.valueOf(this.TM.getDeviceId())+ "......"+v.getTag().toString(),Toast.LENGTH_SHORT).show();
         Button btn = (Button)v;
         final String  action = btn.getText().toString();
         final String tag = v.getTag().toString();
+        socket.emit("likeEvent", TM.getDeviceId().toString(), tag, action);
+        if (action == "Like")
+            btn.setText("Liked");
 
+        else
+            btn.setText("Like");
 
-                StringRequest request = new StringRequest(Request.Method.POST, insUrl, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-
-                        System.out.println(response.toString());
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-
-                    }
-                }) {
-
-                    @Override
-                    protected Map<String, String> getParams() throws AuthFailureError {
-                        Map<String,String> parameters  = new HashMap<String, String>();
-                        parameters.put("userId",TM.getDeviceId().toString());
-                        parameters.put("itemId",tag);
-                        parameters.put("action",action);
-                        return parameters;
-                    }
-                };
-                requestQueue.add(request);
-                if(action == "Like")
-                    btn.setText("Unlike");
-                else
-                    btn.setText("Like");
 
     }
 
+    public void likeEventReceiver(){
+
+        socket.on("likeEvent", new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+                final String like = args[0].toString();
+
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        try {
+                            JSONObject jObj = new JSONObject(like);
+                            String item =  jObj.getString("item_id");
+                            int res = jObj.getInt("res");
+                            int count = lv.getCount();
+                            editCount(lv, count, item, res);
+                        }
+                        catch (Exception e){
+                            Toast.makeText(getApplicationContext(),e.toString(),Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+
+                });
+
+            }
+        });
+    }
+
+
+    public void editCount(ListView lv, int count,String item_id, int res){
+       for(int i = 0; i < count ; i++){
+
+            Button tag  = (Button)lv.getChildAt(i).findViewById(R.id.like);
+
+
+           if (tag.getTag().toString().equals(item_id)){
+                        Button setText = (Button)lv.getChildAt(i).findViewById(R.id.numberText);
+                        String txt = setText.getText().toString();
+                        int newVal = Integer.parseInt(txt) + res;
+                         setText.setText(String.valueOf(newVal));
+
+           }
+
+
+        }
+        reOrder(lv,count);
+    }
 
 
     public void listEvent(View v)
     {
-        // Toast.makeText(getApplicationContext(),String.valueOf(v.getTag()),Toast.LENGTH_SHORT).show();
-//            Toast.makeText(getApplicationContext(),String.valueOf(this.TM.getDeviceId()),Toast.LENGTH_SHORT).show();
 
         Toast.makeText(getApplicationContext(),String.valueOf(this.TM.getDeviceId()),Toast.LENGTH_SHORT).show();
 
     }
 
-    public void reOrder(){
+
+
+    public void reOrder(ListView lv,int count){
+
+        for(int i = 0; i < count - 1 ; i++){
+            for(int y = i+ 1; y < count  ; y++) {
+                Button less = (Button) lv.getChildAt(i).findViewById(R.id.numberText);
+                Button great = (Button) lv.getChildAt(y).findViewById(R.id.numberText);
+                TextView title;
+                TextView blurb;
+                TextView link;
+                TextView picture;
+                String temp_title;
+                String temp_blurb;
+                String temp_link;
+                String temp_picture;
+                String link_counts;
+                String button_tag;
+                String button_text;
+
+                    if(Integer.parseInt(less.getText().toString()) < Integer.parseInt(great.getText().toString()) ){
+
+                            temp_title = ((TextView)lv.getChildAt(i).findViewById(R.id.list_item_string)).getText().toString();
+                            temp_link = ((TextView)lv.getChildAt(i).findViewById(R.id.link)).getText().toString();
+                            temp_blurb = ((TextView)lv.getChildAt(i).findViewById(R.id.blurb)).getText().toString();
+                            temp_picture = ((TextView)lv.getChildAt(i).findViewById(R.id.picture)).getText().toString();
+                            link_counts = ((Button)lv.getChildAt(i).findViewById(R.id.numberText)).getText().toString();
+                        button_tag = ((Button)lv.getChildAt(i).findViewById(R.id.like)).getTag().toString();
+                        button_text = ((Button)lv.getChildAt(i).findViewById(R.id.like)).getText().toString();
+                            ((TextView)lv.getChildAt(i).findViewById(R.id.list_item_string)).setText(((TextView)lv.getChildAt(y).findViewById(R.id.list_item_string)).getText().toString());
+                            ((TextView)lv.getChildAt(i).findViewById(R.id.link)).setText(((TextView)lv.getChildAt(y).findViewById(R.id.link)).getText().toString());
+                            ((TextView)lv.getChildAt(i).findViewById(R.id.blurb)).setText(((TextView)lv.getChildAt(y).findViewById(R.id.blurb)).getText().toString());
+                            ((TextView)lv.getChildAt(i).findViewById(R.id.picture)).setText(((TextView)lv.getChildAt(y).findViewById(R.id.picture)).getText().toString());
+                            ((Button)lv.getChildAt(i).findViewById(R.id.like)).setText(((Button) lv.getChildAt(y).findViewById(R.id.like)).getText().toString());
+                            ((Button)lv.getChildAt(i).findViewById(R.id.like)).setTag(((Button) lv.getChildAt(y).findViewById(R.id.like)).getTag().toString());
+                            ((Button)lv.getChildAt(i).findViewById(R.id.numberText)).setText(((Button) lv.getChildAt(y).findViewById(R.id.numberText)).getText().toString());
+
+                                    ((TextView)lv.getChildAt(y).findViewById(R.id.list_item_string)).setText(temp_title);
+                                    ((TextView)lv.getChildAt(y).findViewById(R.id.link)).setText(temp_link);
+                                    ((TextView)lv.getChildAt(y).findViewById(R.id.blurb)).setText(temp_blurb);
+                                    ((TextView)lv.getChildAt(y).findViewById(R.id.picture)).setText(temp_picture);
+                                    ((Button)lv.getChildAt(y).findViewById(R.id.like)).setText(button_text);
+                                    ((Button)lv.getChildAt(y).findViewById(R.id.like)).setTag(button_tag);
+                                    ((Button)lv.getChildAt(y).findViewById(R.id.numberText)).setText(link_counts);
+
+
+
+                    }
+
+            }
+
+        }
+
 
     }
 
@@ -230,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
        CustomList adapters = new CustomList(list, this);
 
         lv.setAdapter(adapters);
+
 
     }
 

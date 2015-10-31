@@ -58,6 +58,7 @@ import java.util.ArrayList;
         TextView link = (TextView)view.findViewById(R.id.link);
         TextView blurb = (TextView)view.findViewById(R.id.blurb);
         TextView picture = (TextView)view.findViewById(R.id.picture);
+        Button number = (Button)view.findViewById(R.id.numberText);
         String str[] = list.get(position).split("\\|");
         //listItemText.setText(list.get(position));
         link.setText(str[1]);
@@ -66,7 +67,8 @@ import java.util.ArrayList;
         picture.setText(str[3]);
         Button LikeBtn = (Button) view.findViewById(R.id.like);
         LikeBtn.setTag(str[4]);
-
+        LikeBtn.setText(str[6]);
+        number.setText(str[5]);
         return view;
     }
 }
