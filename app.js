@@ -46,7 +46,7 @@ var connection = getConnection();
 var string = '';
 connection.connect();
 var res = 0;
-if(action == 'Like')
+if(action == 'LIKE')
 {
 string = 'INSERT INTO rss_feed_user (user_id, item_id) VALUES (?,?)';
 res = 1 ;
@@ -153,16 +153,16 @@ function loadXml(val,deviceId,socket){
                                                              gBlurb = blurb[0].childNodes[0].nodeValue;
                                                              str = item[i].getAttribute("id");
                                                               if(linkLike.indexOf(gId) > -1 ){
-                                                                  action = "Liked";
+                                                                  action = "LIKED";
                                                               }
                                                               else{
-                                                                  action = "Like";
+                                                                  action = "LIKE";
                                                               }
 
                                                        str ="<item id = \""+str+"\">"+br+"<action>"+action+"</action>"+br+"<number>"+number+"</number>"+br+"<id>"+gId+"</id>"+br+"<title>"+gTitle+"</title>"+br+"<link>"+gLink+"</link><picture>"+gPicture+"</picture>"+br+"<blurb>"+gBlurb+"</blurb>"+br+"</item>"+br;
                                                           
                                                      if( index  > -1 ){       
-                                                            top.push(str);
+                                                            top[index]=str;
                                                        
                                                       }
                                                       else{

@@ -2,6 +2,7 @@ package com.rss_feed.identified.test;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Looper;
 import android.provider.DocumentsContract;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +19,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,7 +50,8 @@ public class MainActivity extends AppCompatActivity {
     public ListView lv;
     private Socket socket;
     public TelephonyManager TM;
-    String insUrl = "http://192.168.1.7:80/test/insert.php";
+    String insUrl = "http://192.168.1.6:80/test/insert.php";
+    private ProgressBar progressBar;
     RequestQueue requestQueue;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         requestQueue = Volley.newRequestQueue(getApplicationContext());
       //  View load = (View) findViewById(R.id.loadMore);
         try {
-            socket = IO.socket("http://192.168.1.7:3000/");
+            socket = IO.socket("http://192.168.1.6:3000/");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -72,8 +75,7 @@ public class MainActivity extends AppCompatActivity {
         socket.connect();
 
         loadMore(null);
-
-        likeEventReceiver();
+       likeEventReceiver();
 
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -83,7 +85,6 @@ public class MainActivity extends AppCompatActivity {
                 String blurb = ((TextView) arg1.findViewById(R.id.blurb)).getText().toString();
                 String picture = ((TextView) arg1.findViewById(R.id.picture)).getText().toString();
                 String link = ((TextView) arg1.findViewById(R.id.link)).getText().toString();
-                Toast.makeText(getApplicationContext(), title, Toast.LENGTH_SHORT).show();
                 View checkBoxView = View.inflate(MainActivity.this, R.layout.dialogbox, null);
                 ((TextView) checkBoxView.findViewById(R.id.title)).setText(title);
                 ((TextView) checkBoxView.findViewById(R.id.blurb)).setText(blurb);
@@ -97,8 +98,8 @@ public class MainActivity extends AppCompatActivity {
                 Ion.with(getApplicationContext())
                         .load(picture)
                         .withBitmap()
-                        .placeholder(R.mipmap.ic_launcher)
-                        .error(R.mipmap.ic_launcher)
+                        .placeholder(R.drawable.no_photo_icon)
+                        .error(R.drawable.no_photo_icon)
                                 // .animateLoad(spinAnimation)
                                 // .animateIn(fadeInAnimation)
                         .intoImageView((ImageView) checkBoxView.findViewById(R.id.imageView));
@@ -166,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
 
                                     listView(list);
 
+
                                 }
                             }
                         } catch (Exception e) {
@@ -187,12 +189,12 @@ public class MainActivity extends AppCompatActivity {
         Button btn = (Button)v;
         final String  action = btn.getText().toString();
         final String tag = v.getTag().toString();
-        socket.emit("likeEvent", TM.getDeviceId().toString(), tag, action);
-        if (action == "Like")
-            btn.setText("Liked");
-
+        if (action.equals("LIKE"))
+            btn.setText("LIKED");
         else
-            btn.setText("Like");
+            btn.setText("LIKE");
+        socket.emit("likeEvent", TM.getDeviceId().toString(), tag, action);
+
 
 
     }
@@ -209,13 +211,12 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             JSONObject jObj = new JSONObject(like);
-                            String item =  jObj.getString("item_id");
+                            String item = jObj.getString("item_id");
                             int res = jObj.getInt("res");
                             int count = lv.getCount();
                             editCount(lv, count, item, res);
-                        }
-                        catch (Exception e){
-                            Toast.makeText(getApplicationContext(),e.toString(),Toast.LENGTH_SHORT).show();
+                        } catch (Exception e) {
+                            Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -243,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         }
-        reOrder(lv,count);
+        reOrder(lv, count);
     }
 
 
@@ -310,13 +311,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void listView(ArrayList<String> list){
-       CustomList adapters = new CustomList(list, this);
-
+    public void listView (ArrayList<String> list){
+       final CustomList adapters = new CustomList(list, this);
         lv.setAdapter(adapters);
 
-
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -340,4 +341,10 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
+
 }
+
+
+
